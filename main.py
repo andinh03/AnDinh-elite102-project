@@ -9,60 +9,56 @@ connection = mysql.connector.connect(
 )
 
 cursor =connection.cursor()
-test_query = ("SELECT * FROM new_table")
-cursor.execute(test_query)
-
-#Print the table in the MySQL workbench for testing
-# for item in cursor:
-#     print(item)
 
 #Function to create new account
 def new_user(username, name, age, gender, balance, password):
     user_query = "INSERT INTO new_table (username, name, age, gender, balance, password) VALUES (%s, %s, %s, %s, %s, %s)"
     values = (username, name, age, gender, balance, password)
     cursor.execute(user_query, values)
-    return ("Successful created new user")
+    connection.commit()
+    return "Successful created new user"
 
 #Function to modify the users information
 def name_update(name, id):
-    name_query = (f"UPDATE new_table SET name = {name} WHERE account_number = {id}")
+    name_query = f"UPDATE new_table SET name = '{name}' WHERE account_number = {id}"
     cursor.execute(name_query)
-    return cursor.fetchall("Name succesfully changed")
-
-def username_update(username, id):
-    username = (f"UPDATE new_table SET username = {username} WHERE account_number = {id}")
-    cursor.execute(username)
-    return cursor.fetchall("Username successfully changed")
+    connection.commit()
+    return "Succesfully changed name"
 
 def password_update(password, id):
-    password = (f"UPDATE new_table SET password = {password} WHERE account_number {id}")
-    cursor.execute(password)
-    return cursor.fetchall("Password successfully changed")
+    password_query = f"UPDATE new_table SET password = '{password}' WHERE account_number {id}"
+    cursor.execute(password_query)
+    connection.commit()
+    return "Password successfully changed"
 
 #Function to delete the account
 def close_account(username):
-    user_delete = (f"DELETE FROM new_table WHERE username = {username}")
+    user_delete = f"DELETE FROM new_table WHERE username = '{username}'"
     cursor.execute(user_delete)
-    return cursor.fetchall("Username succesfully changed")
+    connection.commit()
+    return "Username succesfully changed"
 
 #Function to check the account balance
 def check_account(account):
-    balance_query = (f"SELECT balance FROM new_table WHERE account_number = {account}")
-    cursor.execute(balance_query)
-    return(float(cursor.fetchall()[0][0]))
+    balance_query = "SELECT balance FROM new_table WHERE account_number = %s "
+    cursor.execute(balance_query, (account, ))
+    return float(cursor.fetchone()[0])
 
 #Function to deposit money into account balance
 def deposit_money(amount, account):
     balance = check_account(account)
-    deposit_amount = (f"UPDATE new_table SET balance = {amount + balance}  WHERE account_number = {account}")
-    cursor.execute(deposit_amount)
+    deposit_amount = balance + amount
+    deposit_query = f"UPDATE new_table SET balance = {deposit_amount}  WHERE account_number = {account}"
+    cursor.execute(deposit_query)
+    connection.commit()
 
 #Function to withdraw money from the designate account
 def withdraw_money(amount, account): 
     balance = check_account(account)
     if balance >= amount:
-        withdraw_amount = (f"UPDATE new_table SET balance = {balance - amount} WHERE account_number = {account}")
-        cursor.execute(withdraw_amount)
+        withdraw_amount = balance - amount
+        withdraw_query = f"UPDATE new_table SET balance = {withdraw_amount} WHERE account_number = {account}"
+        cursor.execute(withdraw_query)
         connection.commit()
     else:
         print("Insufficient funds")
@@ -83,15 +79,38 @@ def user_input():
 
     number = int(input("Enter the number of your choice: "))
     if number == 1:
-        new_user(input("username, name, age, gender, balance, password: "))
+        new_user(
+            input("Enter username: "),
+            input("Enter name: "),
+            int(input("Enter age: ")),
+            input("Enter gender: "),
+            float(input("Enter balance: ")),
+            input("Enter password: ")
+        )
+    elif number == 2:
+        print("Choose what you want to modify: ")
+        print("1. Update Name")
+        print("2. Update Password")
+        choice = int(input("Enter your choice: "))
+        if choice == 1:
+            name_update(input("Enter new name: "), input("Enter account number: "))
+        elif choice == 2:
+            password_update(input("Enter new password: "), input("Enter account number: "))
+    elif number == 3:
+        close_account(input("Enter username: "))
+    elif number == 4:
+        print("Account balance: $", check_account(input("Enter account number: ")))
+    elif number == 5:
+        deposit_money(float(input("Enter deposit amount: ")), input("Enter account number: "))
+    elif number == 6:
+        withdraw_money(float(input("Enter withdrawal amount: ")), input("Enter account number: "))
+    elif number == 7:
+        print("Returning to Main Menu...")
+    else:
+        print("Invalid choice")
 
 user_input()
-# print(check_account(1234))
-# deposit_money(100, 1234)
-# print(check_account(1234))
-# withdraw_money(100,1345)
-# print(check_account(1345))
-name_update("Chandler", 6093)
+
 
 cursor.close()
 connection.close()
